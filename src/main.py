@@ -1,5 +1,7 @@
 import cv2
 import glob
+import pickle
+import os
 import sys
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -8,8 +10,6 @@ import queue
 from scipy.ndimage import label
 from skimage.feature import hog
 from moviepy.editor import VideoFileClip
-
-from train import svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins
 
 class DetectionInfo():
     def __init__(self, test_images):
@@ -204,15 +204,25 @@ def find_vehicles(image, input_type, detection_info=None):
         raise RuntimeError("Input type must be either image or video.")
 
 if __name__ == '__main__':
-    #Read cars and not-cars images
 
+    dist_pickle = pickle.load(open(os.path.join('..', 'data', 'svc_pickle.sav'), 'rb'))
+    
+    svc = dist_pickle["svc"] 
+    X_scaler = dist_pickle["scaler"] 
+    orient = dist_pickle["orient"] 
+    pix_per_cell = dist_pickle["pix_per_cell"] 
+    cell_per_block = dist_pickle["cell_per_block"] 
+    spatial_size = dist_pickle["spatial_size"] 
+    hist_bins = dist_pickle["hist_bins"]
+    
+    #Read cars and not-cars images
     #Data folders
-    test_images_dir = '../test_images/'
+    test_images_dir = os.path.join('..', 'test_images')
 
     # images are divided up into vehicles and non-vehicles
     test_images = []
 
-    images = glob.glob(test_images_dir + '*.jpg')
+    images = glob.glob(test_images_dir + '/*.jpg')
 
     for image in images:
         test_images.append(mpimg.imread(image))

@@ -2,6 +2,8 @@ import cv2
 import matplotlib.image as mpimg
 import glob
 import numpy as np
+import pickle
+import os
 from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -89,58 +91,72 @@ def extract_features(imgs, cspace='RGB', spatial_size=(32, 32),
     # Return list of feature vectors
     return features
 
-vehicles_dir =     '../data/vehicles'
-non_vehicles_dir = '../data/non-vehicles'
+if __name__ == '__main__':
 
-# images are divided up into vehicles and non-vehicles
-cars = []
-notcars = []
+    vehicles_dir =  os.path.join('..', 'data', 'vehicles')
+    non_vehicles_dir = os.path.join('..', 'data', 'non-vehicles')
 
-# Read vehicle images
-images = glob.iglob(vehicles_dir + '/*/*.png', recursive=True)
+    # images are divided up into vehicles and non-vehicles
+    cars = []
+    notcars = []
 
-for image in images:
-    cars.append(image)
-        
-# Read non-vehicle images
-images = glob.iglob(non_vehicles_dir + '/*/*.png', recursive=True)
+    # Read vehicle images
+    images = glob.iglob(vehicles_dir + '/*/*.png', recursive=True)
 
-for image in images:
-    notcars.append(image)
+    for image in images:
+        cars.append(image)
+            
+    # Read non-vehicle images
+    images = glob.iglob(non_vehicles_dir + '/*/*.png', recursive=True)
 
-#Training the classifier using SVC
-colorspace = 'YUV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 9
-pix_per_cell = 8
-cell_per_block = 2
-hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
-spatial_size=(32, 32)
-hist_bins=32
+    for image in images:
+        notcars.append(image)
 
-#Extracting car features and non-car features
-car_features = extract_features(cars, cspace=colorspace, orient=orient, 
-                        pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, hist_bins=hist_bins)
-notcar_features = extract_features(notcars, cspace=colorspace, orient=orient, 
-                        pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, hist_bins=hist_bins)
+    #Training the classifier using SVC
+    colorspace = 'YUV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+    orient = 9
+    pix_per_cell = 8
+    cell_per_block = 2
+    hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
+    spatial_size=(32, 32)
+    hist_bins=32
 
-# Create an array stack of feature vectors
-X = np.vstack((car_features, notcar_features)).astype(np.float64) 
-# Fit a per-column scaler
-X_scaler = StandardScaler().fit(X)
-# Apply the scaler to X
-scaled_X = X_scaler.transform(X)
+    #Extracting car features and non-car features
+    car_features = extract_features(cars, cspace=colorspace, orient=orient, 
+                            pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
+                            hog_channel=hog_channel, hist_bins=hist_bins)
+    notcar_features = extract_features(notcars, cspace=colorspace, orient=orient, 
+                            pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
+                            hog_channel=hog_channel, hist_bins=hist_bins)
 
-# Define the labels vector
-y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
+    # Create an array stack of feature vectors
+    X = np.vstack((car_features, notcar_features)).astype(np.float64) 
+    # Fit a per-column scaler
+    X_scaler = StandardScaler().fit(X)
+    # Apply the scaler to X
+    scaled_X = X_scaler.transform(X)
 
-# Split up data into randomized training and test sets
-rand_state = np.random.randint(0, 100)
-X_train, X_test, y_train, y_test = train_test_split(
-    scaled_X, y, test_size=0.15, random_state=rand_state)
+    # Define the labels vector
+    y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
 
-# Use a linear SVC X_scaler
-svc = LinearSVC()
-# Check the training time for the SVC
-svc.fit(X_train, y_train)
+    # Split up data into randomized training and test sets
+    rand_state = np.random.randint(0, 100)
+    X_train, X_test, y_train, y_test = train_test_split(
+        scaled_X, y, test_size=0.15, random_state=rand_state)
+
+    # Use a linear SVC X_scaler
+    svc = LinearSVC()
+    # Check the training time for the SVC
+    svc.fit(X_train, y_train)
+
+    # Save the model 
+    data_file_path = os.path.join('..', 'data', 'svc_pickle.sav')
+    pickle.dump({ 
+        'svc': svc, 
+        'scaler': X_scaler, 
+        'orient': orient, 
+        'pix_per_cell': pix_per_cell, 
+        'cell_per_block': cell_per_block, 
+        'spatial_size': spatial_size, 
+        'hist_bins': hist_bins  
+    }, open(data_file_path, 'wb'))
