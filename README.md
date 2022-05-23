@@ -11,7 +11,5 @@ To detect vehicles you should run the "run" script, it take three arguments, the
 
 ### Examples:
 
-```./run.sh image ../test_images/test5.jpg ../output_image.jpg```
-
-
-```./run.sh video ../project_video.mp4 ../output_video.mp4```
+	./process.sh image ../test_images/test5.jpg ../output_image.jpg
+	./process.sh video ../project_video.mp4 ../output_video.mp4
